@@ -44,7 +44,7 @@ async fn main() -> irc::error::Result<()> {
     let answer = "https://heyguys.cc/";
 
     let config = Config {
-        nickname: nick,
+        nickname: nick.clone(),
         username: nick,
         password: pass,
         server: server,
