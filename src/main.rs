@@ -7,15 +7,21 @@ use std::env;
 
 #[tokio::main]
 async fn main() -> irc::error::Result<()>{
-    let nick = match env::var("NICK") {
+    let nick = Some(match env::var("NICK") {
         Ok(val) => val,
         Err(_e) => "momopassan".to_string(),
+    });
+
+    let pass = match env::var("PASSWORD") {
+        Ok(val) => Some(val),
+        Err(_e) => None,
     };
 
-    let server = match env::var("SERVER") {
+
+    let server = Some(match env::var("SERVER") {
         Ok(val) => val,
         Err(_e) => "chat.freenode.net".to_string(),
-    };
+    });
 
     let irc_chans = match env::var("CHANNELS") {
         Ok(val) => val.split(';').map(String::from).collect::<Vec<std::string::String>>(),
@@ -23,8 +29,8 @@ async fn main() -> irc::error::Result<()>{
     };
 
     let use_tls = match env::var("NO_TLS") {
-        Ok(_val) => false,
-        Err(_e) => true,
+        Ok(_val) => Some(false),
+        Err(_e) => None,
     };
 
     let debug = match env::var("DEBUG") {
@@ -37,10 +43,11 @@ async fn main() -> irc::error::Result<()>{
     let answer = "https://heyguys.cc/";
 
     let config = Config {
-        nickname: Some(nick),
-        server: Some(server),
+        nickname: nick,
+        nick_password: pass,
+        server: server,
         channels: irc_chans,
-        use_tls: Some(use_tls),
+        use_tls: use_tls,
         ..Config::default()
     };
 
