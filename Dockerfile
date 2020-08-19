@@ -6,5 +6,6 @@ RUN cargo build --release
 
 
 FROM fedora:32
+MAINTAINER Michael Scherer <misc@redhat.com>
 COPY --from=0 /app/target/release/well-actually-bot .
 CMD ["./well-actually-bot"]
