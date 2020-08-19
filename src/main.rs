@@ -27,6 +27,11 @@ async fn main() -> irc::error::Result<()>{
         Err(_e) => true,
     };
 
+    let debug = match env::var("DEBUG") {
+        Ok(_val) => true,
+        Err(_e) => false,
+    };
+
 
     let re = Regex::new(r"^(?i)h+(i+|ll+o+|e+y+)\s+(guy|dude)s?").unwrap();
     let answer = "https://heyguys.cc/";
@@ -47,6 +52,9 @@ async fn main() -> irc::error::Result<()>{
 
     while let Some(message) = stream.next().await.transpose()? {
 
+        if debug {
+            print!("{}", message)
+        };
         match message.command {
             Command::PRIVMSG(ref target, ref msg) => {
                 if re.is_match(msg) {
