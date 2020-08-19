@@ -22,6 +22,12 @@ async fn main() -> irc::error::Result<()>{
         Err(_e) => vec!["#test-misc-bot".to_string()],
     };
 
+    let use_tls = match env::var("NO_TLS") {
+        Ok(_val) => false,
+        Err(_e) => true,
+    };
+
+
     let re = Regex::new(r"^(?i)h+(i+|ll+o+|e+y+)\s+(guy|dude)s?").unwrap();
     let answer = "https://heyguys.cc/";
 
@@ -29,6 +35,7 @@ async fn main() -> irc::error::Result<()>{
         nickname: Some(nick),
         server: Some(server),
         channels: irc_chans,
+        use_tls: Some(use_tls),
         ..Config::default()
     };
 
