@@ -2,7 +2,6 @@
 
 use futures::prelude::*;
 use irc::client::prelude::*;
-use irc::proto;
 use radix64::STD;
 use regex::Regex;
 use std::env;
