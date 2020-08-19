@@ -35,6 +35,12 @@ async fn main() -> irc::error::Result<()> {
         Err(_e) => None,
     };
 
+    let use_sasl = match env::var("NO_SASL") {
+        Ok(_val) => false,
+        Err(_e) => true,
+    };
+
+
     let debug = match env::var("DEBUG") {
         Ok(_val) => true,
         Err(_e) => false,
@@ -45,8 +51,8 @@ async fn main() -> irc::error::Result<()> {
 
     let config = Config {
         nickname: nick.clone(),
-        username: nick,
-        password: pass,
+        username: nick.clone(),
+        password: pass.clone(),
         server: server,
         channels: irc_chans,
         use_tls: use_tls,
@@ -54,6 +60,11 @@ async fn main() -> irc::error::Result<()> {
     };
 
     let mut client = Client::from_config(config).await?;
+    if use_sasl {
+        // TODO handle error
+        client.send_sasl(format!("{}:{}", nick.unwrap(), pass.unwrap()));
+
+    }
     client.identify()?;
 
     let mut stream = client.stream()?;
