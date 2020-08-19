@@ -45,6 +45,7 @@ async fn main() -> irc::error::Result<()> {
 
     let config = Config {
         nickname: nick,
+        username: nick,
         password: pass,
         server: server,
         channels: irc_chans,
