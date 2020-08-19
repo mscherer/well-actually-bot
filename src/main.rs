@@ -2,6 +2,8 @@
 
 use futures::prelude::*;
 use irc::client::prelude::*;
+use irc::proto;
+use radix64::STD;
 use regex::Regex;
 use std::env;
 
@@ -35,12 +37,6 @@ async fn main() -> irc::error::Result<()> {
         Err(_e) => None,
     };
 
-    let use_sasl = match env::var("NO_SASL") {
-        Ok(_val) => false,
-        Err(_e) => true,
-    };
-
-
     let debug = match env::var("DEBUG") {
         Ok(_val) => true,
         Err(_e) => false,
@@ -60,20 +56,30 @@ async fn main() -> irc::error::Result<()> {
     };
 
     let mut client = Client::from_config(config).await?;
-    if use_sasl {
-        // TODO handle error
-        client.send_sasl(format!("{}:{}", nick.unwrap(), pass.unwrap()));
-
-    }
-    client.identify()?;
-
     let mut stream = client.stream()?;
     let sender = client.sender();
 
+    // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
+    // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
+    client.send_cap_req(&[Capability::Sasl])?;
+    // https://ircv3.net/specs/extensions/sasl-3.1
+    client.send_sasl_plain();
+    let toencode = format!(
+        "{}\0{}\0{}",
+        nick.clone().unwrap(),
+        nick.unwrap(),
+        pass.unwrap()
+    );
+    let encoded = STD.encode(&toencode);
+    client.send_sasl(encoded).unwrap();
+
+    client.identify()?;
+
     while let Some(message) = stream.next().await.transpose()? {
         if debug {
-            print!("{}", message)
+            print!("debug: {}", message)
         };
+
         match message.command {
             Command::PRIVMSG(ref target, ref msg) => {
                 if re.is_match(msg) {
