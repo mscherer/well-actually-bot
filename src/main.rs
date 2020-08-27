@@ -6,6 +6,17 @@ use radix64::STD;
 use regex::Regex;
 use std::env;
 
+#[cfg(debug_assertions)]
+fn default_debug() -> bool {
+    true
+}
+
+#[cfg(not(debug_assertions))]
+fn default_debug() -> bool {
+    false
+}
+
+
 #[tokio::main]
 async fn main() -> irc::error::Result<()> {
     let nick = match env::var("NICK") {
@@ -38,7 +49,7 @@ async fn main() -> irc::error::Result<()> {
 
     let debug = match env::var("DEBUG") {
         Ok(_val) => true,
-        Err(_e) => false,
+        Err(_e) => default_debug(),
     };
 
     let re = Regex::new(r"^(?i)h+(i+|ll+o+|e+y+)\s+(guy|dude)s?").unwrap();
