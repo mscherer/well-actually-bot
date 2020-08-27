@@ -8,10 +8,10 @@ use std::env;
 
 #[tokio::main]
 async fn main() -> irc::error::Result<()> {
-    let nick = Some(match env::var("NICK") {
+    let nick = match env::var("NICK") {
         Ok(val) => val,
         Err(_e) => "momopassan".to_string(),
-    });
+    };
 
     let pass = match env::var("PASSWORD") {
         Ok(val) => Some(val),
@@ -45,8 +45,8 @@ async fn main() -> irc::error::Result<()> {
     let answer = "https://heyguys.cc/";
 
     let config = Config {
-        nickname: nick.clone(),
-        username: nick.clone(),
+        nickname: Some(nick.clone()),
+        username: Some(nick.clone()),
         password: pass.clone(),
         server: server,
         channels: irc_chans,
@@ -62,15 +62,15 @@ async fn main() -> irc::error::Result<()> {
     // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
     client.send_cap_req(&[Capability::Sasl])?;
     // https://ircv3.net/specs/extensions/sasl-3.1
-    client.send_sasl_plain();
+    client.send_sasl_plain()?;
     let toencode = format!(
         "{}\0{}\0{}",
-        nick.clone().unwrap(),
-        nick.unwrap(),
+        nick,
+        nick,
         pass.unwrap()
     );
     let encoded = STD.encode(&toencode);
-    client.send_sasl(encoded).unwrap();
+    client.send_sasl(encoded)?;
 
     client.identify()?;
 
