@@ -64,25 +64,22 @@ async fn main() -> irc::error::Result<()> {
         use_tls: use_tls,
         ..Config::default()
     };
+            print!("debug: {}", nick);
 
     let mut client = Client::from_config(config).await?;
     let mut stream = client.stream()?;
     let sender = client.sender();
 
-    // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
-    // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
-    client.send_cap_req(&[Capability::Sasl])?;
-    // https://ircv3.net/specs/extensions/sasl-3.1
-    client.send_sasl_plain()?;
-    let toencode = format!(
-        "{}\0{}\0{}",
-        nick,
-        nick,
-        pass.unwrap()
-    );
-    let encoded = STD.encode(&toencode);
-    client.send_sasl(encoded)?;
-
+    if let Some(p) = pass {
+        // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
+        // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
+        client.send_cap_req(&[Capability::Sasl])?;
+        // https://ircv3.net/specs/extensions/sasl-3.1
+        client.send_sasl_plain()?;
+        let toencode = format!("{}\0{}\0{}", nick, nick, p);
+        let encoded = STD.encode(&toencode);
+        client.send_sasl(encoded)?;
+    }
     client.identify()?;
 
     while let Some(message) = stream.next().await.transpose()? {
