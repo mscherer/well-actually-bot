@@ -18,63 +18,57 @@ fn default_debug() -> bool {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> irc::error::Result<()> {
-    let nick = match env::var("NICK") {
-        Ok(val) => val,
-        Err(_e) => "momopassan".to_string(),
-    };
+    let nick = env::var("NICK").ok().or(Some("momopassan".to_string()));
 
     let pass = env::var("PASSWORD").ok();
 
-    let server = Some(match env::var("SERVER") {
-        Ok(val) => val,
-        Err(_e) => "chat.freenode.net".to_string(),
-    });
+    let server = env::var("SERVER")
+        .ok()
+        .or(Some("irc.libera.chat".to_string()));
 
-    let irc_chans = match env::var("CHANNELS") {
+    let channels = match env::var("CHANNELS") {
         Ok(val) => val
             .split(';')
             .map(String::from)
             .collect::<Vec<std::string::String>>(),
-        Err(_e) => vec!["#test-misc-bot".to_string()],
+        Err(_) => vec!["#test-misc-bot".to_string()],
     };
 
-    let use_tls = match env::var("NO_TLS") {
-        Ok(_val) => Some(false),
-        Err(_e) => None,
-    };
+    let use_tls = env::var("NO_TLS").is_ok();
 
     let debug = match env::var("DEBUG") {
-        Ok(_val) => true,
-        Err(_e) => default_debug(),
+        Ok(_) => true,
+        Err(_) => default_debug(),
     };
 
     let re = Regex::new(r"^(?i)h+(i+|ll+o+|e+y+)\s+(guy|dude)s?").unwrap();
     let answer = "https://heyguys.cc/";
 
     let config = Config {
-        nickname: Some(nick.clone()),
-        username: Some(nick.clone()),
+        nickname: nick.clone(),
+        username: nick.clone(),
         password: pass.clone(),
         server,
-        channels: irc_chans,
-        use_tls,
+        channels,
+        use_tls: Some(use_tls),
         ..Config::default()
     };
-    print!("debug: {nick}");
 
     let mut client = Client::from_config(config).await?;
     let mut stream = client.stream()?;
     let sender = client.sender();
 
     if let Some(p) = pass {
-        // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
-        // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
-        client.send_cap_req(&[Capability::Sasl])?;
-        // https://ircv3.net/specs/extensions/sasl-3.1
-        client.send_sasl_plain()?;
-        let toencode = format!("{nick}\0{nick}\0{p}");
-        let encoded = STD.encode(&toencode);
-        client.send_sasl(encoded)?;
+        if let Some(n) = nick {
+            // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
+            // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
+            client.send_cap_req(&[Capability::Sasl])?;
+            // https://ircv3.net/specs/extensions/sasl-3.1
+            client.send_sasl_plain()?;
+            let toencode = format!("{n}\0{n}\0{p}");
+            let encoded = STD.encode(&toencode);
+            client.send_sasl(encoded)?;
+        }
     }
     client.identify()?;
 
