@@ -16,7 +16,6 @@ fn default_debug() -> bool {
     false
 }
 
-
 #[tokio::main]
 async fn main() -> irc::error::Result<()> {
     let nick = match env::var("NICK") {
@@ -64,7 +63,7 @@ async fn main() -> irc::error::Result<()> {
         use_tls: use_tls,
         ..Config::default()
     };
-            print!("debug: {}", nick);
+    print!("debug: {}", nick);
 
     let mut client = Client::from_config(config).await?;
     let mut stream = client.stream()?;
