@@ -16,7 +16,7 @@ fn default_debug() -> bool {
     false
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> irc::error::Result<()> {
     let nick = match env::var("NICK") {
         Ok(val) => val,
