@@ -23,10 +23,7 @@ async fn main() -> irc::error::Result<()> {
         Err(_e) => "momopassan".to_string(),
     };
 
-    let pass = match env::var("PASSWORD") {
-        Ok(val) => Some(val),
-        Err(_e) => None,
-    };
+    let pass = env::var("PASSWORD").ok();
 
     let server = Some(match env::var("SERVER") {
         Ok(val) => val,
@@ -58,12 +55,12 @@ async fn main() -> irc::error::Result<()> {
         nickname: Some(nick.clone()),
         username: Some(nick.clone()),
         password: pass.clone(),
-        server: server,
+        server,
         channels: irc_chans,
-        use_tls: use_tls,
+        use_tls,
         ..Config::default()
     };
-    print!("debug: {}", nick);
+    print!("debug: {nick}");
 
     let mut client = Client::from_config(config).await?;
     let mut stream = client.stream()?;
@@ -75,7 +72,7 @@ async fn main() -> irc::error::Result<()> {
         client.send_cap_req(&[Capability::Sasl])?;
         // https://ircv3.net/specs/extensions/sasl-3.1
         client.send_sasl_plain()?;
-        let toencode = format!("{}\0{}\0{}", nick, nick, p);
+        let toencode = format!("{nick}\0{nick}\0{p}");
         let encoded = STD.encode(&toencode);
         client.send_sasl(encoded)?;
     }
@@ -83,16 +80,13 @@ async fn main() -> irc::error::Result<()> {
 
     while let Some(message) = stream.next().await.transpose()? {
         if debug {
-            print!("debug: {}", message)
+            print!("debug: {message}")
         };
 
-        match message.command {
-            Command::PRIVMSG(ref target, ref msg) => {
-                if re.is_match(msg) {
-                    sender.send_privmsg(message.response_target().unwrap_or(target), answer)?;
-                }
+        if let Command::PRIVMSG(ref target, ref msg) = message.command {
+            if re.is_match(msg) {
+                sender.send_privmsg(message.response_target().unwrap_or(target), answer)?;
             }
-            _ => (),
         }
     }
 
