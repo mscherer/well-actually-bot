@@ -58,17 +58,17 @@ async fn main() -> irc::error::Result<()> {
     let mut stream = client.stream()?;
     let sender = client.sender();
 
-    if let Some(p) = pass {
-        if let Some(n) = nick {
-            // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
-            // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
-            client.send_cap_req(&[Capability::Sasl])?;
-            // https://ircv3.net/specs/extensions/sasl-3.1
-            client.send_sasl_plain()?;
-            let toencode = format!("{n}\0{n}\0{p}");
-            let encoded = STD.encode(&toencode);
-            client.send_sasl(encoded)?;
-        }
+    if let Some(p) = pass
+        && let Some(n) = nick
+    {
+        // taken from https://github.com/clukawski/pybot-rs/blob/master/src/main.rs
+        // https://github.com/jkhsjdhjs/chell/blob/8b752085e5dde10db9acd0ba7e7a0f18b39282a5/src/sasl.rs
+        client.send_cap_req(&[Capability::Sasl])?;
+        // https://ircv3.net/specs/extensions/sasl-3.1
+        client.send_sasl_plain()?;
+        let toencode = format!("{n}\0{n}\0{p}");
+        let encoded = STD.encode(&toencode);
+        client.send_sasl(encoded)?;
     }
     client.identify()?;
 
@@ -77,10 +77,10 @@ async fn main() -> irc::error::Result<()> {
             print!("debug: {message}")
         };
 
-        if let Command::PRIVMSG(ref target, ref msg) = message.command {
-            if re.is_match(msg) {
-                sender.send_privmsg(message.response_target().unwrap_or(target), answer)?;
-            }
+        if let Command::PRIVMSG(ref target, ref msg) = message.command
+            && re.is_match(msg)
+        {
+            sender.send_privmsg(message.response_target().unwrap_or(target), answer)?;
         }
     }
 
